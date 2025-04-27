@@ -1,0 +1,121 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  producer:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile.python
+    command: python producer_consumer/producer.py
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+
+  consumer:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile.python
+    command: python producer_consumer/consumer.py
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+
+  publisher:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile.python
+    command: python pub_sub/publisher.py
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+
+  subscriber:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile.python
+    command: python pub_sub/subscriber.py
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      SUBSCRIBER_NAME: "subscriber-1"
+
+  request_service:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile.python
+    command: python request_reply/request_service.py
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+
+  reply_service:
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile.python
+    command: python request_reply/reply_service.py
+    depends_on:
+      - rabbitmq
+    environment:
+      RABBITMQ_HOST: rabbitmq
+
+  backend1:
+    build: ./backend
+    environment:
+      - BACKEND_ID=Backend-1
+    ports:
+      - "3001:3000"
+    depends_on:
+      - rabbitmq
+      - database
+
+  backend2:
+    build: ./backend
+    environment:
+      - BACKEND_ID=Backend-2
+    ports:
+      - "3002:3000"
+    depends_on:
+      - rabbitmq
+      - database
+
+  backend3:
+    build: ./backend
+    environment:
+      - BACKEND_ID=Backend-3
+    ports:
+      - "3003:3000"
+    depends_on:
+      - rabbitmq
+      - database
+  
+  database:
+    build: ./database
+    ports:
+      - "5432:5432"
+  
+  nginx:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend/nginx.conf:/etc/nginx/nginx.conf
+      - ./frontend/public:/usr/share/nginx/html  # Serve static frontend files(stackoverflow)
+    depends_on:
+      - backend1
+      - backend2
+      - backend3
