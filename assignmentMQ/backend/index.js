@@ -17,7 +17,7 @@ const backendId = process.env.BACKEND_ID || 'unknown-backend';
 
 // Database configuration
 const dbConfig = {
-  host: process.env.MYSQL_HOST || 'todo-db',
+  host: process.env.MYSQL_HOST || 'primary_db',
   user: process.env.MYSQL_USER || 'todo_user',
   password: process.env.MYSQL_PASSWORD || 'todo_password',
   database: process.env.MYSQL_DATABASE || 'tododb'
